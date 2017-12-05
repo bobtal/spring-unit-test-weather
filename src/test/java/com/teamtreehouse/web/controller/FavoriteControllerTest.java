@@ -3,7 +3,12 @@ package com.teamtreehouse.web.controller;
 import com.teamtreehouse.domain.Favorite;
 import com.teamtreehouse.service.FavoriteNotFoundException;
 import com.teamtreehouse.service.FavoriteService;
-import com.teamtreehouse.web.FlashMessage;
+import com.teamtreehouse.service.WeatherService;
+import com.teamtreehouse.service.dto.geocoding.Geometry;
+import com.teamtreehouse.service.dto.geocoding.Location;
+import com.teamtreehouse.service.dto.geocoding.PlacesResult;
+import com.teamtreehouse.service.dto.weather.Weather;
+import com.teamtreehouse.service.resttemplate.PlacesService;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,11 +24,9 @@ import java.util.List;
 import java.util.Random;
 
 import static com.teamtreehouse.domain.Favorite.FavoriteBuilder;
-import static com.teamtreehouse.web.FlashMessage.Status.SUCCESS;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FavoriteControllerTest {
@@ -33,7 +36,13 @@ public class FavoriteControllerTest {
     private FavoriteController controller;
 
     @Mock
-    private FavoriteService service;
+    private FavoriteService favoriteService;
+
+    @Mock
+    private PlacesService placesService;
+
+    @Mock
+    private WeatherService weatherService;
 
     @Before
     public void setUp() throws Exception {
@@ -47,14 +56,14 @@ public class FavoriteControllerTest {
                 new FavoriteBuilder(1L).withAddress("Chicago").withPlaceId("chicago1").build(),
                 new FavoriteBuilder(2L).withAddress("Omaha").withPlaceId("omaha1").build()
         );
-        when(service.findAll()).thenReturn(favorites);
+        when(favoriteService.findAll()).thenReturn(favorites);
 
         // Act (perform the MVC request) and Assert results
         mockMvc.perform(get("/favorites"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("favorite/index"))
                 .andExpect(model().attribute("favorites", favorites));
-        verify(service).findAll();
+        verify(favoriteService).findAll();
     }
 
     @Test
@@ -65,7 +74,7 @@ public class FavoriteControllerTest {
             Favorite f = (Favorite)invocation.getArguments()[0];
             f.setId(randomId);
             return null;
-        }).when(service).save(any(Favorite.class));
+        }).when(favoriteService).save(any(Favorite.class));
 
         // Act (perform the MVC request) and Assert results
         mockMvc.perform(
@@ -73,20 +82,51 @@ public class FavoriteControllerTest {
                 .param("formattedAddress", "chicago, il")
                 .param("placeId", "windycuty")
         ).andExpect(redirectedUrl(String.format("/favorites/%d", randomId)));
-        verify(service).save(any(Favorite.class));
+        verify(favoriteService).save(any(Favorite.class));
     }
 
     @Test
     public void detail_ShouldErrorOnNotFound() throws Exception {
         // Arrange the mock behavior
-        when(service.findById(1L)).thenThrow(FavoriteNotFoundException.class);
+        when(favoriteService.findById(1L)).thenThrow(FavoriteNotFoundException.class);
 
         // Act (perform the MVC request) and Assert results
         mockMvc.perform(get("/favorites/1"))
             .andExpect(view().name("error"))
             .andExpect(model().attribute("ex", Matchers.instanceOf(FavoriteNotFoundException.class)));
-        verify(service).findById(1L);
+        verify(favoriteService).findById(1L);
     }
+
+    @Test
+    public void detail_ShouldShowDetailForFavorite() throws Exception {
+        // Arrange the mock behavior
+        Favorite fav = new FavoriteBuilder(1L).withPlaceId("chicago1").build();
+        Location location = new Location(123.123d, 123.123d);
+        Geometry geometry = new Geometry();
+        PlacesResult placesResult = new PlacesResult();
+        Weather weather = new Weather();
+
+        geometry.setLocation(location);
+        placesResult.setPlaceId("chicago1");
+        placesResult.setGeometry(geometry);
+
+        when(favoriteService.findById(1L)).thenReturn(fav);
+        when(placesService.findByPlaceId("chicago1")).thenReturn(placesResult);
+        when(weatherService.findByLocation(location)).thenReturn(weather);
+
+        // Act (perform the MVC request) and Assert results
+        mockMvc.perform(
+            get("/favorites/1")
+        )
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("favorite", fav))
+                .andExpect(model().attribute("weather", weather))
+                .andExpect(view().name("favorite/detail"));
+        verify(favoriteService).findById(1L);
+        verify(placesService).findByPlaceId("chicago1");
+        verify(weatherService).findByLocation(location);
+    }
+
 
 }
 
@@ -105,7 +145,7 @@ public class FavoriteControllerTest {
 //    private FavoriteController controller;
 //
 //    @Mock
-//    private FavoriteService service;
+//    private FavoriteService favoriteService;
 //
 //    @Before
 //    public void setup() {
@@ -121,13 +161,13 @@ public class FavoriteControllerTest {
 //public class FavoriteControllerTest {
 //    private MockMvc mockMvc;
 //    private FavoriteController controller;
-//    private FavoriteService service;
+//    private FavoriteService favoriteService;
 //
 //    @Before
 //    public void setup() {
-//        // Construct the service mock
-//        service = Mockito.mock(FavoriteService.class);
-//        controller = new FavoriteController(service,null,null);
+//        // Construct the favoriteService mock
+//        favoriteService = Mockito.mock(FavoriteService.class);
+//        controller = new FavoriteController(favoriteService,null,null);
 //        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 //    }
 //}
