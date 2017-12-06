@@ -41,6 +41,19 @@ public class FavoriteServiceTest {
     }
 
     @Test
+    public void findAll_ShouldReturnAll() throws Exception {
+        List<Favorite> faves = Arrays.asList(
+                new Favorite(),
+                new Favorite()
+        );
+
+        when(dao.findAll()).thenReturn(faves);
+
+        assertEquals("findAll should return all favorites", faves, service.findAll());
+        verify(dao).findAll();
+    }
+
+    @Test
     public void findById_ShouldReturnOne() throws Exception {
         when(dao.findOne(1L)).thenReturn(new Favorite());
         // This (assertThat method) is from the Hamcrest library (instead of JUnit)
