@@ -30,8 +30,8 @@ public class FavoriteServiceTest {
     @Test
     public void findAll_ShouldReturnTwo() throws Exception {
         List<Favorite> faves = Arrays.asList(
-                new Favorite(),
-                new Favorite()
+            new Favorite(),
+            new Favorite()
         );
 
         when(dao.findAll()).thenReturn(faves);
