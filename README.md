@@ -51,3 +51,14 @@ places.api.name = Google Places API
 places.api.key = YOUR_API_KEY_HERE
 places.api.host = maps.googleapis.com
 ```
+
+### Additional resources on testing
+
+Integration Tests with HTMLUnit
+
+If you want rich testing of your application, including testing of navigation and form submission, check out this series of blog posts:
+
+1.[Introducing Spring Test MVC HtmlUnit](https://spring.io/blog/2014/03/19/introducing-spring-test-mvc-htmlunit)
+2.[Spring MVC Test with HtmlUnit](https://spring.io/blog/2014/03/25/spring-mvc-test-with-htmlunit)
+3.[Spring MVC Test with WebDriver](https://spring.io/blog/2014/03/26/spring-mvc-test-with-webdriver)
+4.[Spring MVC Test with Geb](https://spring.io/blog/2014/04/15/spring-mvc-test-with-geb)
